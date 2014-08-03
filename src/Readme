@@ -1,0 +1,9 @@
+#write in c++11
+http_conn.cpp  http_conn.h main.cpp threadPool.h are server code.
+stress_client.cpp is stress test code.
+
+To run,just make Makefile.
+
+Run:
+./webServ 127.0.0.1 1111 #ip port
+./stressClient 127.0.0.1 1111 1000 # 
