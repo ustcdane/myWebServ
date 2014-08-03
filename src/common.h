@@ -15,7 +15,7 @@
 
 extern "C" {
 // 将文件描述符设置为非阻塞
-inline int setnonblocking( int fd )
+inline int setnonblocking( int fd )// inline防止重复定义
 {
     int old_option = fcntl( fd, F_GETFL );
     int new_option = old_option | O_NONBLOCK;
