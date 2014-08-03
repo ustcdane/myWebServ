@@ -57,7 +57,7 @@ int main( int argc, char* argv[] )
 
 	std::shared_ptr<threadPool<httpConn*>> pool(new threadPool<httpConn* >());
 	pool->start();
-    httpConn* users = new httpConn[ MAX_FD ];
+    httpConn* users = new httpConn[ MAX_FD ];// 潜在的客户池
     assert( users );
     int user_count = 0;
 
@@ -97,7 +97,7 @@ int main( int argc, char* argv[] )
         for ( int i = 0; i < number; i++ )
         {
             int sockfd = events[i].data.fd;
-            if( sockfd == listenfd )
+            if( sockfd == listenfd ) // 接收连接
             {
                 struct sockaddr_in client_address;
                 socklen_t client_addrlength = sizeof( client_address );
@@ -113,15 +113,15 @@ int main( int argc, char* argv[] )
                     continue;
                 }
                 
-                users[connfd].init( connfd, client_address );
+                users[connfd].init( connfd, client_address );// 初始化新连接
             }
             else if( events[i].events & ( EPOLLRDHUP | EPOLLHUP | EPOLLERR ) )
             {
-                users[sockfd].close_conn();
+                users[sockfd].close_conn();// 异常，关闭连接
             }
             else if( events[i].events & EPOLLIN )
             {
-                if( users[sockfd].read() )
+                if( users[sockfd].read() )// 读客户请求
                 {
                     pool->append( users + sockfd );
                 }
@@ -132,7 +132,7 @@ int main( int argc, char* argv[] )
             }
             else if( events[i].events & EPOLLOUT )
             {
-                if( !users[sockfd].write() )
+                if( !users[sockfd].write() )//向客户写数据
                 {
                     users[sockfd].close_conn();
                 }
