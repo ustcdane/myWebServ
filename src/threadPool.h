@@ -32,7 +32,7 @@ class threadPool
 		threadPool(const threadPool&) = delete;
 		threadPool& operator= (const threadPool&) = delete;
 
-		void start()
+		void start() // 开始线程池
 		{
 
 			if(m_thread_nums<=0 || m_max_requests<=0)
@@ -47,7 +47,7 @@ class threadPool
 			}
 		}
 
-		void stop()
+		void stop()// 停止线程池
 		{
 			{
 				std::unique_lock<std::mutex> ul(m_mutex);
@@ -60,7 +60,7 @@ class threadPool
 			}
 		}
 
-		void append(T t)
+		void append(T t)// 任务队列中添加任务
 		{
 			if(!m_running || m_threads.empty())
 			{
@@ -71,7 +71,7 @@ class threadPool
 			m_queue.push_back(t);
 			m_not_empty.notify_one();
 		}
-		T take()
+		T take()// 取走任务
 		{
 
 			std::unique_lock<std::mutex> ul(m_mutex);
@@ -82,7 +82,7 @@ class threadPool
 			return t;
 		}
 	private:
-		void run()
+		void run()// 工作线程实际操作
 		{
 			while(m_running)
 			{
@@ -98,14 +98,14 @@ class threadPool
 			}
 		}
 	private:
-		int m_thread_nums;
-		int m_max_requests;
-		std::vector<std::thread> m_threads;
-		std::deque<T> m_queue;
-		std::mutex  m_mutex;
-		std::condition_variable m_not_empty;
-		std::condition_variable m_not_full;
-		bool m_running;
+		int m_thread_nums;// 线程池个数 
+		int m_max_requests;// 最大容量
+		std::vector<std::thread> m_threads;// 线程池 
+		std::deque<T> m_queue;// 任务队列
+		std::mutex  m_mutex;// 互斥锁
+		std::condition_variable m_not_empty;// 非空条件变量
+		std::condition_variable m_not_full;// 非满条件变量
+		bool m_running;// 是否运行
 };
 
 }
