@@ -14,7 +14,7 @@
 #include <sys/epoll.h>
 
 extern "C" {
-
+// 将文件描述符设置为非阻塞
 inline int setnonblocking( int fd )
 {
     int old_option = fcntl( fd, F_GETFL );
@@ -23,7 +23,7 @@ inline int setnonblocking( int fd )
     return old_option;
 }
 
-
+// 将fd 注册到epoolfd 指示的epoll内核事件表中
 inline void addfd( int epollfd, int fd, bool one_shot )
 {
     epoll_event event;
@@ -36,13 +36,13 @@ inline void addfd( int epollfd, int fd, bool one_shot )
     epoll_ctl( epollfd, EPOLL_CTL_ADD, fd, &event );
     setnonblocking( fd );
 }
-
+// 把fd从epoolfd 指示的epoll内核事件表中删除
 inline void removefd( int epollfd, int fd )
 {
     epoll_ctl( epollfd, EPOLL_CTL_DEL, fd, 0 );
     close( fd );
 }
-
+// 修改fd在epoolfd 指示的epoll内核事件表的监控
 inline void modfd( int epollfd, int fd, int ev )
 {
     epoll_event event;
