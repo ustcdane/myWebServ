@@ -1,6 +1,5 @@
 #include "httpConn.h"
 
-
 namespace myWebServ
 {
 
@@ -13,7 +12,8 @@ const char* error_404_title = "Not Found";
 const char* error_404_form = "The requested file was not found on this server.\n";
 const char* error_500_title = "Internal Error";
 const char* error_500_form = "There was an unusual problem serving the requested file.\n";
-const char* doc_root = "/home/ubuntu/webServer/src";
+// web服务器html网页的根目录
+const char* doc_root = "/home/ubuntu/myWebServer/src";
 
 int httpConn::m_user_count = 0;
 int httpConn::m_epollfd = -1;
@@ -37,6 +37,7 @@ void httpConn::init( int sockfd, const sockaddr_in& addr )
     socklen_t len = sizeof( error );
     getsockopt( m_sockfd, SOL_SOCKET, SO_ERROR, &error, &len );
     int reuse = 1;
+    // 关闭TIME_WAIT状态
     setsockopt( m_sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof( reuse ) );
     addfd( m_epollfd, sockfd, true );
     m_user_count++;
@@ -62,7 +63,7 @@ void httpConn::init()
     memset( m_write_buf, '\0', WRITE_BUFFER_SIZE );
     memset( m_real_file, '\0', FILENAME_LEN );
 }
-
+// 从状态机
 httpConn::LINE_STATUS httpConn::parse_line()
 {
     char temp;
@@ -98,7 +99,7 @@ httpConn::LINE_STATUS httpConn::parse_line()
 
     return LINE_OPEN;
 }
-
+// 循环读取客户数据，直到无数据或对方关闭连接
 bool httpConn::read()
 {
     if( m_read_idx >= READ_BUFFER_SIZE )
@@ -107,18 +108,18 @@ bool httpConn::read()
     }
 
     int bytes_read = 0;
-    while( true )
+    while( true )// 循环读
     {
         bytes_read = recv( m_sockfd, m_read_buf + m_read_idx, READ_BUFFER_SIZE - m_read_idx, 0 );
         if ( bytes_read == -1 )
         {
-            if( errno == EAGAIN || errno == EWOULDBLOCK )
+            if( errno == EAGAIN || errno == EWOULDBLOCK )// 无数据
             {
                 break;
             }
             return false;
         }
-        else if ( bytes_read == 0 )
+        else if ( bytes_read == 0 )// 客户关闭连接
         {
             return false;
         }
@@ -127,18 +128,18 @@ bool httpConn::read()
     }
     return true;
 }
-
+// 解析客户请求行，获得请求方法、url、HTTP协议版本
 httpConn::HTTP_CODE httpConn::parse_request_line( char* text )
 {
-    m_url = strpbrk( text, " \t" );
-    if ( ! m_url )
+    m_url = strpbrk( text, " \t" );// 遇到' '或'\t'返回
+    if ( ! m_url )// 无' '或'\t' 则出错
     {
         return BAD_REQUEST;
     }
     *m_url++ = '\0';
 
-    char* method = text;
-    if ( strcasecmp( method, "GET" ) == 0 )
+    char* method = text;// 得到请求方法 字符串
+    if ( strcasecmp( method, "GET" ) == 0 )// 只处理 GET方法
     {
         m_method = GET;
     }
@@ -147,23 +148,23 @@ httpConn::HTTP_CODE httpConn::parse_request_line( char* text )
         return BAD_REQUEST;
     }
 
-    m_url += strspn( m_url, " \t" );
+    m_url += strspn( m_url, " \t" );// 跳过所有' '或'\t'
     m_version = strpbrk( m_url, " \t" );
     if ( ! m_version )
     {
         return BAD_REQUEST;
     }
     *m_version++ = '\0';
-    m_version += strspn( m_version, " \t" );
+    m_version += strspn( m_version, " \t" );// 得到协议版本
     if ( strcasecmp( m_version, "HTTP/1.1" ) != 0 )
     {
         return BAD_REQUEST;
     }
-
+    // 检测URL是否合法
     if ( strncasecmp( m_url, "http://", 7 ) == 0 )
     {
         m_url += 7;
-        m_url = strchr( m_url, '/' );
+        m_url = strchr( m_url, '/' );//得到文件路径
     }
 
     if ( ! m_url || m_url[ 0 ] != '/' )
@@ -171,13 +172,13 @@ httpConn::HTTP_CODE httpConn::parse_request_line( char* text )
         return BAD_REQUEST;
     }
 
-    m_check_state = CHECK_STATE_HEADER;
+    m_check_state = CHECK_STATE_HEADER;// 状态转移到头部字段解析
     return NO_REQUEST;
 }
-
+// 解析HTTP请求头部字段
 httpConn::HTTP_CODE httpConn::parse_headers( char* text )
 {
-    if( text[ 0 ] == '\0' )
+    if( text[ 0 ] == '\0' )// 遇到空行
     {
         if ( m_method == HEAD )
         {
@@ -221,7 +222,7 @@ httpConn::HTTP_CODE httpConn::parse_headers( char* text )
     return NO_REQUEST;
 
 }
-
+// 判断HTTP请求的消息体是否被完整的读入，无深入解析
 httpConn::HTTP_CODE httpConn::parse_content( char* text )
 {
     if ( m_read_idx >= ( m_content_length + m_checked_idx ) )
@@ -232,23 +233,23 @@ httpConn::HTTP_CODE httpConn::parse_content( char* text )
 
     return NO_REQUEST;
 }
-
+// 解析HTTP请求的入口函数，主状态机
 httpConn::HTTP_CODE httpConn::process_read()
 {
     LINE_STATUS line_status = LINE_OK;
     HTTP_CODE ret = NO_REQUEST;
     char* text = 0;
-
+   // 主状态机，从buffer中读取所有完整的行
     while ( ( ( m_check_state == CHECK_STATE_CONTENT ) && ( line_status == LINE_OK  ) )
                 || ( ( line_status = parse_line() ) == LINE_OK ) )
     {
         text = get_line();
-        m_start_line = m_checked_idx;
+        m_start_line = m_checked_idx;// 下一行的起始位置
         printf( "got 1 http line: %s\n", text );
 
         switch ( m_check_state )
         {
-            case CHECK_STATE_REQUESTLINE:
+            case CHECK_STATE_REQUESTLINE:// 状态1，分析请求行
             {
                 ret = parse_request_line( text );
                 if ( ret == BAD_REQUEST )
@@ -257,7 +258,7 @@ httpConn::HTTP_CODE httpConn::process_read()
                 }
                 break;
             }
-            case CHECK_STATE_HEADER:
+            case CHECK_STATE_HEADER:// 状态2，分析头部字段
             {
                 ret = parse_headers( text );
                 if ( ret == BAD_REQUEST )
@@ -270,7 +271,7 @@ httpConn::HTTP_CODE httpConn::process_read()
                 }
                 break;
             }
-            case CHECK_STATE_CONTENT:
+            case CHECK_STATE_CONTENT:// 状态3，分析请求消息体
             {
                 ret = parse_content( text );
                 if ( ret == GET_REQUEST )
@@ -289,7 +290,7 @@ httpConn::HTTP_CODE httpConn::process_read()
 
     return NO_REQUEST;
 }
-
+// 得到正确的HTTP请求后，分析目标文件的属性,若文件存在则使用mmap将其内存映射到m_file_address
 httpConn::HTTP_CODE httpConn::do_request()
 {
     strcpy( m_real_file, doc_root );
@@ -315,7 +316,7 @@ httpConn::HTTP_CODE httpConn::do_request()
     close( fd );
     return FILE_REQUEST;
 }
-
+// 对内存映射区执行munmao操作
 void httpConn::unmap()
 {
     if( m_file_address )
@@ -324,12 +325,12 @@ void httpConn::unmap()
         m_file_address = 0;
     }
 }
-
+// 写HTTP响应
 bool httpConn::write()
 {
     int temp = 0;
     int bytes_have_send = 0;
-    int bytes_to_send = m_write_idx;
+    int bytes_to_send = m_write_idx;// 写缓冲区待发送的字节数
     if ( bytes_to_send == 0 )
     {
         modfd( m_epollfd, m_sockfd, EPOLLIN );
@@ -337,12 +338,12 @@ bool httpConn::write()
         return true;
     }
 
-    while( 1 )
+    while( 1 )// ET 模式下的操作
     {
         temp = writev( m_sockfd, m_iv, m_iv_count );
         if ( temp <= -1 )
         {
-            if( errno == EAGAIN )
+            if( errno == EAGAIN )// 若TCP缓冲区没有空闲空间,则等到下一轮EPOLLOUT事件
             {
                 modfd( m_epollfd, m_sockfd, EPOLLOUT );
                 return true;
@@ -353,6 +354,7 @@ bool httpConn::write()
 
         bytes_to_send -= temp;
         bytes_have_send += temp;
+        // 发送响应成功
         if ( bytes_to_send <= bytes_have_send )
         {
             unmap();
@@ -370,7 +372,7 @@ bool httpConn::write()
         }
     }
 }
-
+// 往写缓冲区写待发送数据
 bool httpConn::add_response( const char* format, ... )
 {
     if( m_write_idx >= WRITE_BUFFER_SIZE )
@@ -420,7 +422,7 @@ bool httpConn::add_content( const char* content )
 {
     return add_response( "%s", content );
 }
-
+// 根据处理结果，返回给客户端相应内容
 bool httpConn::process_write( HTTP_CODE ret )
 {
     switch ( ret )
@@ -499,7 +501,7 @@ bool httpConn::process_write( HTTP_CODE ret )
     m_iv_count = 1;
     return true;
 }
-
+// 线程池中的工作线程调用,处理HTTP请求的入口函数
 void httpConn::process()
 {
     HTTP_CODE read_ret = process_read();
