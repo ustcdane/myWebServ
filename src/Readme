@@ -1,6 +1,6 @@
 #write in c++11
-http_conn.cpp  http_conn.h main.cpp threadPool.h are server code.
-stress_client.cpp is stress test code.
+httpConn.cpp  httpConn.h main.cc threadPool.h are server code.
+stressClient.cc is stress test code.
 
 To run,just make Makefile.
 
