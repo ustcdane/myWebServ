@@ -333,7 +333,7 @@ bool httpConn::write()
     int bytes_to_send = m_write_idx;// 写缓冲区待发送的字节数
     if ( bytes_to_send == 0 )
     {
-        modfd( m_epollfd, m_sockfd, EPOLLIN );
+        modfd( m_epollfd, m_sockfd, EPOLLIN );// set read event
         init();
         return true;
     }
@@ -517,7 +517,7 @@ void httpConn::process()
         close_conn();
     }
 
-    modfd( m_epollfd, m_sockfd, EPOLLOUT );
+    modfd( m_epollfd, m_sockfd, EPOLLOUT );// add write event
 }
 
 }// namespace
