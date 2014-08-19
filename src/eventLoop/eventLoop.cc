@@ -1,9 +1,15 @@
+// Copyright (c) 2014 Daniel Wang. All rights reserved.
+// https://github.com/ustcdane/myWebServ
+// Use of this source code is governed by a BSD-style license
+// that can be found in the License file
+// Author: Daniel Wang(daneustc at gmail dot com)
+
 #include "eventLoop.h"
 
 namespace myWebServ
 {
-	// close connection
-	void eventLoop::close_con(int fd)
+    // close connection
+    void eventLoop::close_con(int fd)
     {
 		auto it=map_fd_http.find(fd);
         if( it != map_fd_http.end())
@@ -35,7 +41,7 @@ namespace myWebServ
                             uint64_t u;
                             read(event_fd, &u, sizeof(uint64_t));
                             std::lock_guard<std::mutex> lg(mx);
-                            while(!fd_con_queue.empty())// °ÑÁ¬½ÓÈ¡³öÀ´
+                            while(!fd_con_queue.empty())// æŠŠè¿æ¥å–å‡ºæ¥
                             {
                                 int fd = fd_con_queue.front();
                                 fd_con_queue.pop();
@@ -43,10 +49,10 @@ namespace myWebServ
                             }// while
                         }// mutex
 
-                        //³õÊ¼»¯Á¬½Ó
+                        //åˆå§‹åŒ–è¿æ¥
                         for(auto it=vec.begin(); it!=vec.end(); ++it)
                         {
-                            // Î´ÊÍ·ÅµÄÁ¬½Ó
+                            // æœªé‡Šæ”¾çš„è¿æ¥
                             assert(map_fd_http.find(*it)==map_fd_http.end());
                             /// **************
                             map_fd_http[*it] = new httpConn(*it, pEpoll, this);
