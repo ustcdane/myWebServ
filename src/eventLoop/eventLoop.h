@@ -1,3 +1,9 @@
+// Copyright (c) 2014 Daniel Wang. All rights reserved.
+// https://github.com/ustcdane/myWebServ
+// Use of this source code is governed by a BSD-style license
+// that can be found in the License file
+// Author: Daniel Wang(daneustc at gmail dot com)
+
 #ifndef EVENTLOOP_H
 #define EVENTLOOP_H
 
@@ -18,7 +24,7 @@ namespace myWebServ
 class httpConn;
 
 /**
- *  ¶Ô¾ßÌåÊÂ¼ş´¦ÀíµÄ·â×°loopµÄ·â×°
+ *  å¯¹å…·ä½“äº‹ä»¶å¤„ç†çš„å°è£…loopçš„å°è£…
  */
 class eventLoop
 {
