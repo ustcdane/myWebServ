@@ -5,5 +5,5 @@ stressTest.cc is stress test code.
 To run,just make Makefile.
 make
 Run:
-./webServ 127.0.0.1 1111 #ip port
-./stressClient 127.0.0.1 1111 1000 # 
+./webServ 127.0.0.1 1111 4 #ip port thread_nums
+./stressTest 127.0.0.1 1111 1000 # 
