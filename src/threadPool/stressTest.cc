@@ -1,3 +1,12 @@
+// Copyright (c) 2014 Daniel Wang. All rights reserved.
+// https://github.com/ustcdane/myWebServ
+
+// Use of this source code is governed by a BSD-style license 
+// that can be found in the License file
+
+// Author: Daniel Wang(daneustc at gmail dot com)
+
+// web server 
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -72,6 +81,7 @@ bool read_once( int sockfd, char* buffer, int len )
     return true;
 }
 
+// 
 void start_conn( int epoll_fd, int num, const char* ip, int port )
 {
     int ret = 0;
@@ -129,7 +139,7 @@ int main( int argc, char* argv[] )
                 event.data.fd = sockfd;
                 epoll_ctl( epoll_fd, EPOLL_CTL_MOD, sockfd, &event );
             }
-            else if( events[i].events & EPOLLOUT ) 
+            else if( events[i].events & EPOLLOUT ) // write request
             {
                 if ( ! write_nbytes( sockfd, request, strlen( request ) ) )
                 {

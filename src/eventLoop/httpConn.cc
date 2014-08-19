@@ -1,3 +1,9 @@
+// Copyright (c) 2014 Daniel Wang. All rights reserved.
+// https://github.com/ustcdane/myWebServ
+// Use of this source code is governed by a BSD-style license
+// that can be found in the License file
+// Author: Daniel Wang(daneustc at gmail dot com)
+
 #include "httpConn.h"
 
 namespace myWebServ
@@ -12,7 +18,7 @@ const char* error_404_title = "Not Found";
 const char* error_404_form = "The requested file was not found on this server.\n";
 const char* error_500_title = "Internal Error";
 const char* error_500_form = "There was an unusual problem serving the requested file.\n";
-// web·şÎñÆ÷htmlÍøÒ³µÄ¸ùÄ¿Â¼
+// webæœåŠ¡å™¨htmlç½‘é¡µçš„æ ¹ç›®å½•
 const char* doc_root = "/home/ubuntu/myWebServ/src/eventLoop";
 
 
@@ -35,7 +41,7 @@ void httpConn::init()
     memset( m_write_buf, '\0', WRITE_BUFFER_SIZE );
     memset( m_real_file, '\0', FILENAME_LEN );
 }
-// ´Ó×´Ì¬»ú
+// ä»çŠ¶æ€æœº
 httpConn::LINE_STATUS httpConn::parse_line()
 {
     char temp;
@@ -71,7 +77,7 @@ httpConn::LINE_STATUS httpConn::parse_line()
 
     return LINE_OPEN;
 }
-// Ñ­»·¶ÁÈ¡¿Í»§Êı¾İ£¬Ö±µ½ÎŞÊı¾İ»ò¶Ô·½¹Ø±ÕÁ¬½Ó
+// å¾ªç¯è¯»å–å®¢æˆ·æ•°æ®ï¼Œç›´åˆ°æ— æ•°æ®æˆ–å¯¹æ–¹å…³é—­è¿æ¥
 bool httpConn::read()
 {
     if( m_read_idx >= READ_BUFFER_SIZE )
@@ -80,18 +86,18 @@ bool httpConn::read()
     }
 
     int bytes_read = 0;
-    while( true )// Ñ­»·¶Á
+    while( true )// å¾ªç¯è¯»
     {
         bytes_read = recv( m_sockfd, m_read_buf + m_read_idx, READ_BUFFER_SIZE - m_read_idx, 0 );
         if ( bytes_read == -1 )
         {
-            if( errno == EAGAIN || errno == EWOULDBLOCK )// ÎŞÊı¾İ
+            if( errno == EAGAIN || errno == EWOULDBLOCK )// æ— æ•°æ®
             {
                 break;
             }
             return false;
         }
-        else if ( bytes_read == 0 )// ¿Í»§¹Ø±ÕÁ¬½Ó
+        else if ( bytes_read == 0 )// å®¢æˆ·å…³é—­è¿æ¥
         {
             return false;
         }
@@ -100,18 +106,18 @@ bool httpConn::read()
     }
     return true;
 }
-// ½âÎö¿Í»§ÇëÇóĞĞ£¬»ñµÃÇëÇó·½·¨¡¢url¡¢HTTPĞ­Òé°æ±¾
+// è§£æå®¢æˆ·è¯·æ±‚è¡Œï¼Œè·å¾—è¯·æ±‚æ–¹æ³•ã€urlã€HTTPåè®®ç‰ˆæœ¬
 httpConn::HTTP_CODE httpConn::parse_request_line( char* text )
 {
-    m_url = strpbrk( text, " \t" );// Óöµ½' '»ò'\t'·µ»Ø
-    if ( ! m_url )// ÎŞ' '»ò'\t' Ôò³ö´í
+    m_url = strpbrk( text, " \t" );// é‡åˆ°' 'æˆ–'\t'è¿”å›
+    if ( ! m_url )// æ— ' 'æˆ–'\t' åˆ™å‡ºé”™
     {
         return BAD_REQUEST;
     }
     *m_url++ = '\0';
 
-    char* method = text;// µÃµ½ÇëÇó·½·¨ ×Ö·û´®
-    if ( strcasecmp( method, "GET" ) == 0 )// Ö»´¦Àí GET·½·¨
+    char* method = text;// å¾—åˆ°è¯·æ±‚æ–¹æ³• å­—ç¬¦ä¸²
+    if ( strcasecmp( method, "GET" ) == 0 )// åªå¤„ç† GETæ–¹æ³•
     {
         m_method = GET;
     }
@@ -120,23 +126,23 @@ httpConn::HTTP_CODE httpConn::parse_request_line( char* text )
         return BAD_REQUEST;
     }
 
-    m_url += strspn( m_url, " \t" );// Ìø¹ıËùÓĞ' '»ò'\t'
+    m_url += strspn( m_url, " \t" );// è·³è¿‡æ‰€æœ‰' 'æˆ–'\t'
     m_version = strpbrk( m_url, " \t" );
     if ( ! m_version )
     {
         return BAD_REQUEST;
     }
     *m_version++ = '\0';
-    m_version += strspn( m_version, " \t" );// µÃµ½Ğ­Òé°æ±¾
+    m_version += strspn( m_version, " \t" );// å¾—åˆ°åè®®ç‰ˆæœ¬
     if ( strcasecmp( m_version, "HTTP/1.1" ) != 0 )
     {
         return BAD_REQUEST;
     }
-    // ¼ì²âURLÊÇ·ñºÏ·¨
+    // æ£€æµ‹URLæ˜¯å¦åˆæ³•
     if ( strncasecmp( m_url, "http://", 7 ) == 0 )
     {
         m_url += 7;
-        m_url = strchr( m_url, '/' );//µÃµ½ÎÄ¼şÂ·¾¶
+        m_url = strchr( m_url, '/' );//å¾—åˆ°æ–‡ä»¶è·¯å¾„
     }
 
     if ( ! m_url || m_url[ 0 ] != '/' )
@@ -144,13 +150,13 @@ httpConn::HTTP_CODE httpConn::parse_request_line( char* text )
         return BAD_REQUEST;
     }
 
-    m_check_state = CHECK_STATE_HEADER;// ×´Ì¬×ªÒÆµ½Í·²¿×Ö¶Î½âÎö
+    m_check_state = CHECK_STATE_HEADER;// çŠ¶æ€è½¬ç§»åˆ°å¤´éƒ¨å­—æ®µè§£æ
     return NO_REQUEST;
 }
-// ½âÎöHTTPÇëÇóÍ·²¿×Ö¶Î
+// è§£æHTTPè¯·æ±‚å¤´éƒ¨å­—æ®µ
 httpConn::HTTP_CODE httpConn::parse_headers( char* text )
 {
-    if( text[ 0 ] == '\0' )// Óöµ½¿ÕĞĞ
+    if( text[ 0 ] == '\0' )// é‡åˆ°ç©ºè¡Œ
     {
         if ( m_method == HEAD )
         {
@@ -194,7 +200,7 @@ httpConn::HTTP_CODE httpConn::parse_headers( char* text )
     return NO_REQUEST;
 
 }
-// ÅĞ¶ÏHTTPÇëÇóµÄÏûÏ¢ÌåÊÇ·ñ±»ÍêÕûµÄ¶ÁÈë£¬ÎŞÉîÈë½âÎö
+// åˆ¤æ–­HTTPè¯·æ±‚çš„æ¶ˆæ¯ä½“æ˜¯å¦è¢«å®Œæ•´çš„è¯»å…¥ï¼Œæ— æ·±å…¥è§£æ
 httpConn::HTTP_CODE httpConn::parse_content( char* text )
 {
     if ( m_read_idx >= ( m_content_length + m_checked_idx ) )
@@ -205,23 +211,23 @@ httpConn::HTTP_CODE httpConn::parse_content( char* text )
 
     return NO_REQUEST;
 }
-// ½âÎöHTTPÇëÇóµÄÈë¿Úº¯Êı£¬Ö÷×´Ì¬»ú
+// è§£æHTTPè¯·æ±‚çš„å…¥å£å‡½æ•°ï¼Œä¸»çŠ¶æ€æœº
 httpConn::HTTP_CODE httpConn::process_read()
 {
     LINE_STATUS line_status = LINE_OK;
     HTTP_CODE ret = NO_REQUEST;
     char* text = 0;
-   // Ö÷×´Ì¬»ú£¬´ÓbufferÖĞ¶ÁÈ¡ËùÓĞÍêÕûµÄĞĞ
+   // ä¸»çŠ¶æ€æœºï¼Œä»bufferä¸­è¯»å–æ‰€æœ‰å®Œæ•´çš„è¡Œ
     while ( ( ( m_check_state == CHECK_STATE_CONTENT ) && ( line_status == LINE_OK  ) )
                 || ( ( line_status = parse_line() ) == LINE_OK ) )
     {
         text = get_line();
-        m_start_line = m_checked_idx;// ÏÂÒ»ĞĞµÄÆğÊ¼Î»ÖÃ
+        m_start_line = m_checked_idx;// ä¸‹ä¸€è¡Œçš„èµ·å§‹ä½ç½®
         printf( "get 1 http line: %s\n", text);
 
         switch ( m_check_state )
         {
-            case CHECK_STATE_REQUESTLINE:// ×´Ì¬1£¬·ÖÎöÇëÇóĞĞ
+            case CHECK_STATE_REQUESTLINE:// çŠ¶æ€1ï¼Œåˆ†æè¯·æ±‚è¡Œ
             {
                 ret = parse_request_line( text );
                 if ( ret == BAD_REQUEST )
@@ -230,7 +236,7 @@ httpConn::HTTP_CODE httpConn::process_read()
                 }
                 break;
             }
-            case CHECK_STATE_HEADER:// ×´Ì¬2£¬·ÖÎöÍ·²¿×Ö¶Î
+            case CHECK_STATE_HEADER:// çŠ¶æ€2ï¼Œåˆ†æå¤´éƒ¨å­—æ®µ
             {
                 ret = parse_headers( text );
                 if ( ret == BAD_REQUEST )
@@ -243,7 +249,7 @@ httpConn::HTTP_CODE httpConn::process_read()
                 }
                 break;
             }
-            case CHECK_STATE_CONTENT:// ×´Ì¬3£¬·ÖÎöÇëÇóÏûÏ¢Ìå
+            case CHECK_STATE_CONTENT:// çŠ¶æ€3ï¼Œåˆ†æè¯·æ±‚æ¶ˆæ¯ä½“
             {
                 ret = parse_content( text );
                 if ( ret == GET_REQUEST )
@@ -262,7 +268,7 @@ httpConn::HTTP_CODE httpConn::process_read()
 
     return NO_REQUEST;
 }
-// µÃµ½ÕıÈ·µÄHTTPÇëÇóºó£¬·ÖÎöÄ¿±êÎÄ¼şµÄÊôĞÔ,ÈôÎÄ¼ş´æÔÚÔòÊ¹ÓÃmmap½«ÆäÄÚ´æÓ³Éäµ½m_file_address
+// å¾—åˆ°æ­£ç¡®çš„HTTPè¯·æ±‚åï¼Œåˆ†æç›®æ ‡æ–‡ä»¶çš„å±æ€§,è‹¥æ–‡ä»¶å­˜åœ¨åˆ™ä½¿ç”¨mmapå°†å…¶å†…å­˜æ˜ å°„åˆ°m_file_address
 httpConn::HTTP_CODE httpConn::do_request()
 {
     strcpy( m_real_file, doc_root );
@@ -288,7 +294,7 @@ httpConn::HTTP_CODE httpConn::do_request()
     close( fd );
     return FILE_REQUEST;
 }
-// ¶ÔÄÚ´æÓ³ÉäÇøÖ´ĞĞmunmao²Ù×÷
+// å¯¹å†…å­˜æ˜ å°„åŒºæ‰§è¡Œmunmaoæ“ä½œ
 void httpConn::unmap()
 {
     if( m_file_address )
@@ -297,12 +303,12 @@ void httpConn::unmap()
         m_file_address = 0;
     }
 }
-// Ğ´HTTPÏìÓ¦
+// å†™HTTPå“åº”
 bool httpConn::write()
 {
     int temp = 0;
     int bytes_have_send = 0;
-    int bytes_to_send = m_write_idx;// Ğ´»º³åÇø´ı·¢ËÍµÄ×Ö½ÚÊı
+    int bytes_to_send = m_write_idx;// å†™ç¼“å†²åŒºå¾…å‘é€çš„å­—èŠ‚æ•°
     if ( bytes_to_send == 0 )
     {
         pEpoll->mod(m_sockfd, EPOLLIN );// set read event
@@ -310,12 +316,12 @@ bool httpConn::write()
         return true;
     }
 
-    while( 1 )// ET Ä£Ê½ÏÂµÄ²Ù×÷
+    while( 1 )// ET æ¨¡å¼ä¸‹çš„æ“ä½œ
     {
         temp = writev( m_sockfd, m_iv, m_iv_count );
         if ( temp <= -1 )
         {
-            if( errno == EAGAIN )// ÈôTCP»º³åÇøÃ»ÓĞ¿ÕÏĞ¿Õ¼ä,ÔòµÈµ½ÏÂÒ»ÂÖEPOLLOUTÊÂ¼ş
+            if( errno == EAGAIN )// è‹¥TCPç¼“å†²åŒºæ²¡æœ‰ç©ºé—²ç©ºé—´,åˆ™ç­‰åˆ°ä¸‹ä¸€è½®EPOLLOUTäº‹ä»¶
             {
                 pEpoll->mod( m_sockfd, EPOLLOUT );
                 return true;
@@ -326,7 +332,7 @@ bool httpConn::write()
 
         bytes_to_send -= temp;
         bytes_have_send += temp;
-        // ·¢ËÍÏìÓ¦³É¹¦
+        // å‘é€å“åº”æˆåŠŸ
         if ( bytes_to_send <= bytes_have_send )
         {
             unmap();
@@ -344,7 +350,7 @@ bool httpConn::write()
         }
     }
 }
-// ÍùĞ´»º³åÇøĞ´´ı·¢ËÍÊı¾İ
+// å¾€å†™ç¼“å†²åŒºå†™å¾…å‘é€æ•°æ®
 bool httpConn::add_response( const char* format, ... )
 {
     if( m_write_idx >= WRITE_BUFFER_SIZE )
@@ -394,7 +400,7 @@ bool httpConn::add_content( const char* content )
 {
     return add_response( "%s", content );
 }
-// ¸ù¾İ´¦Àí½á¹û£¬·µ»Ø¸ø¿Í»§¶ËÏàÓ¦ÄÚÈİ
+// æ ¹æ®å¤„ç†ç»“æœï¼Œè¿”å›ç»™å®¢æˆ·ç«¯ç›¸åº”å†…å®¹
 bool httpConn::process_write( HTTP_CODE ret )
 {
     switch ( ret )
@@ -473,7 +479,7 @@ bool httpConn::process_write( HTTP_CODE ret )
     m_iv_count = 1;
     return true;
 }
-// Ïß³Ì³ØÖĞµÄ¹¤×÷Ïß³Ìµ÷ÓÃ,´¦ÀíHTTPÇëÇóµÄÈë¿Úº¯Êı
+// çº¿ç¨‹æ± ä¸­çš„å·¥ä½œçº¿ç¨‹è°ƒç”¨,å¤„ç†HTTPè¯·æ±‚çš„å…¥å£å‡½æ•°
 void httpConn::process()
 {
     HTTP_CODE read_ret = process_read();

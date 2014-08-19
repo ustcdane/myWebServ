@@ -1,3 +1,9 @@
+// Copyright (c) 2014 Daniel Wang. All rights reserved.
+// https://github.com/ustcdane/myWebServ
+// Use of this source code is governed by a BSD-style license
+// that can be found in the License file
+// Author: Daniel Wang(daneustc at gmail dot com)
+
 #ifndef HTTPCONNECTION_H
 #define HTTPCONNECTION_H
 
@@ -32,13 +38,13 @@ public:
     static const int FILENAME_LEN = 200;
     static const int READ_BUFFER_SIZE = 2048;
     static const int WRITE_BUFFER_SIZE = 1024;
-    // HTTPÇëÇó·½·¨
+    // HTTPè¯·æ±‚æ–¹æ³•
     enum METHOD { GET = 0, POST, HEAD, PUT, DELETE, TRACE, OPTIONS, CONNECT, PATCH };
-    // ½âÎöHTTPÇëÇóÊ±,Ö÷×´Ì¬»úËù´¦×´Ì¬
+    // è§£æHTTPè¯·æ±‚æ—¶,ä¸»çŠ¶æ€æœºæ‰€å¤„çŠ¶æ€
     enum CHECK_STATE { CHECK_STATE_REQUESTLINE = 0, CHECK_STATE_HEADER, CHECK_STATE_CONTENT };
-    // ·şÎñÆ÷´¦ÀíHTTPÇëÇóµÄ¿ÉÄÜ×´Ì¬
+    // æœåŠ¡å™¨å¤„ç†HTTPè¯·æ±‚çš„å¯èƒ½çŠ¶æ€
     enum HTTP_CODE { NO_REQUEST, GET_REQUEST, BAD_REQUEST, NO_RESOURCE, FORBIDDEN_REQUEST, FILE_REQUEST, INTERNAL_ERROR, CLOSED_CONNECTION };
-    // ĞĞµÄ¶ÁÈ¡×´Ì¬
+    // è¡Œçš„è¯»å–çŠ¶æ€
     enum LINE_STATUS { LINE_OK = 0, LINE_BAD, LINE_OPEN };
 
 public:
@@ -48,7 +54,7 @@ public:
     	socklen_t len = sizeof( error );
     	getsockopt( m_sockfd, SOL_SOCKET, SO_ERROR, &error, &len );
     	int reuse = 1;
-    	// ¹Ø±ÕTIME_WAIT×´Ì¬
+    	// å…³é—­TIME_WAITçŠ¶æ€
     	setsockopt( m_sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof( reuse ) );
 	init();
     	pEpoll->add(sockfd);
@@ -65,11 +71,11 @@ public:
     bool write();
 
 private:
-    void init();// ³õÊ¼»¯Á¬½Ó
-    HTTP_CODE process_read();// ½âÎöHTTPÇëÇó
-    bool process_write( HTTP_CODE ret );// Ìî³äHTTPÓ¦´ğ
+    void init();// åˆå§‹åŒ–è¿æ¥
+    HTTP_CODE process_read();// è§£æHTTPè¯·æ±‚
+    bool process_write( HTTP_CODE ret );// å¡«å……HTTPåº”ç­”
 
-    // process_read()µ÷ÓÃÏÂÃæº¯Êı½øĞĞHTTPÇëÇó½âÎö
+    // process_read()è°ƒç”¨ä¸‹é¢å‡½æ•°è¿›è¡ŒHTTPè¯·æ±‚è§£æ
     HTTP_CODE parse_request_line( char* text );
     HTTP_CODE parse_headers( char* text );
     HTTP_CODE parse_content( char* text );
@@ -77,7 +83,7 @@ private:
     char* get_line() { return m_read_buf + m_start_line; }
     LINE_STATUS parse_line();
 
-    // process_write() µ÷ÓÃÏÂÃæµÄº¯ÊıÌî³ä HTTPÓ¦´ğ
+    // process_write() è°ƒç”¨ä¸‹é¢çš„å‡½æ•°å¡«å…… HTTPåº”ç­”
     void unmap();
     bool add_response( const char* format, ... );
     bool add_content( const char* content );
@@ -88,27 +94,27 @@ private:
     bool add_blank_line();
 
 private:
-    epoller *pEpoll;// ËùÓĞsocketÊÂ¼ş×¢²áµ½Õâ¸öepollÄÚºËÊÂ¼şÖĞ
+    epoller *pEpoll;// æ‰€æœ‰socketäº‹ä»¶æ³¨å†Œåˆ°è¿™ä¸ªepollå†…æ ¸äº‹ä»¶ä¸­
     eventLoop *pLoop;
 
-    int m_sockfd;// ¸ÃHTTPÁ¬½ÓµÄsocket
-    char m_read_buf[ READ_BUFFER_SIZE ];// ¶È»º³åÇø
-    int m_read_idx;// ±êÊ¶¶Á»º³åÇø´ı¶Á×Ö½ÚµÄÎ»ÖÃ
-    int m_checked_idx;// µ±Ç°ÕıÔÚ·ÖÎöµÄ×Ö·ûÔÚ»º³åÇøµÄÎ»ÖÃ
-    int m_start_line;// µ±Ç°ÕıÔÚ½âÎöµÄĞĞµÄÆğÊ¼Î»ÖÃ
-    char m_write_buf[ WRITE_BUFFER_SIZE ];// Ğ´»º³åÇø
-    int m_write_idx;// Ğ´»º³åÇø´ı·¢ËÍ×Ö½ÚÊı
-    CHECK_STATE m_check_state; // Ö÷×´Ì¬»úËù´¦×´Ì¬
-    METHOD m_method;// ÇëÇó·½·¨
-    char m_real_file[ FILENAME_LEN ];// ¿Í»§ÇëÇóµÄÄ¿±êÎÄ¼şµÄÍêÕûÂ·¾¶
-    char* m_url;// ¿Í»§ÇëÇóµÄÄ¿±êÎÄ¼şµÄÎÄ¼şÃû
-    char* m_version;// HTTPĞ­Òé°æ±¾
-    char* m_host;// Ö÷»úÃû
-    int m_content_length;// HTTPÇëÇóµÄÏûÏ¢ÌåµÄ³¤¶È
-    bool m_linger;// HTTPÇëÇóÊÇ·ñ±£³ÖÁ¬½Ó keeplive
-    char* m_file_address;// ¿Í»§ÇëÇómmapµ½ÄÚ´æÖĞµÄÆğÊ¼Î»ÖÃ
-    struct stat m_file_stat;// Ä¿±êÎÄ¼şµÄ×´Ì¬
-    struct iovec m_iv[2];// ²ÉÓÃ writevÀ´Ö´ĞĞĞ´²Ù×÷£¬ËùĞèµÄ±äÁ¿
+    int m_sockfd;// è¯¥HTTPè¿æ¥çš„socket
+    char m_read_buf[ READ_BUFFER_SIZE ];// åº¦ç¼“å†²åŒº
+    int m_read_idx;// æ ‡è¯†è¯»ç¼“å†²åŒºå¾…è¯»å­—èŠ‚çš„ä½ç½®
+    int m_checked_idx;// å½“å‰æ­£åœ¨åˆ†æçš„å­—ç¬¦åœ¨ç¼“å†²åŒºçš„ä½ç½®
+    int m_start_line;// å½“å‰æ­£åœ¨è§£æçš„è¡Œçš„èµ·å§‹ä½ç½®
+    char m_write_buf[ WRITE_BUFFER_SIZE ];// å†™ç¼“å†²åŒº
+    int m_write_idx;// å†™ç¼“å†²åŒºå¾…å‘é€å­—èŠ‚æ•°
+    CHECK_STATE m_check_state; // ä¸»çŠ¶æ€æœºæ‰€å¤„çŠ¶æ€
+    METHOD m_method;// è¯·æ±‚æ–¹æ³•
+    char m_real_file[ FILENAME_LEN ];// å®¢æˆ·è¯·æ±‚çš„ç›®æ ‡æ–‡ä»¶çš„å®Œæ•´è·¯å¾„
+    char* m_url;// å®¢æˆ·è¯·æ±‚çš„ç›®æ ‡æ–‡ä»¶çš„æ–‡ä»¶å
+    char* m_version;// HTTPåè®®ç‰ˆæœ¬
+    char* m_host;// ä¸»æœºå
+    int m_content_length;// HTTPè¯·æ±‚çš„æ¶ˆæ¯ä½“çš„é•¿åº¦
+    bool m_linger;// HTTPè¯·æ±‚æ˜¯å¦ä¿æŒè¿æ¥ keeplive
+    char* m_file_address;// å®¢æˆ·è¯·æ±‚mmapåˆ°å†…å­˜ä¸­çš„èµ·å§‹ä½ç½®
+    struct stat m_file_stat;// ç›®æ ‡æ–‡ä»¶çš„çŠ¶æ€
+    struct iovec m_iv[2];// é‡‡ç”¨ writevæ¥æ‰§è¡Œå†™æ“ä½œï¼Œæ‰€éœ€çš„å˜é‡
     int m_iv_count;
 };
 
