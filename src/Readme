@@ -1,9 +1,14 @@
 #write in c++11
-httpConn.cc  httpConn.h main.cc threadPool.h are server code.
-stressClient.cc is stress test code.
+myWebServ有两种运行模式，基于threadPool(半同步/半反应堆)和 event loop per thread(高效的半同步/半异步模式).
+两种运行方式都是基于非阻塞I/O + epoll。
 
-To run,just make Makefile.
+选择一种运行方式:
+cd eventLoop then make
+make
 
-Run:
+运行:
 ./webServ 127.0.0.1 1111 #ip port
-./stressClient 127.0.0.1 1111 1000 # 
+
+./stressTest 127.0.0.1 1111 1000 # 
+
+或者在浏览器地址栏输入：http://127.0.0.1:1111/index.html 即可看到请求到的网页。
