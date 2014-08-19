@@ -1,3 +1,9 @@
+// Copyright (c) 2014 Daniel Wang. All rights reserved.
+// https://github.com/ustcdane/myWebServ
+// Use of this source code is governed by a BSD-style license
+// that can be found in the License file
+// Author: Daniel Wang(daneustc at gmail dot com)
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
