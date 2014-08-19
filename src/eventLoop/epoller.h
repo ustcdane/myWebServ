@@ -1,3 +1,9 @@
+// Copyright (c) 2014 Daniel Wang. All rights reserved.
+// https://github.com/ustcdane/myWebServ
+// Use of this source code is governed by a BSD-style license
+// that can be found in the License file
+// Author: Daniel Wang(daneustc at gmail dot com)
+
 #ifndef EPOLLER_H
 #define EPOLLER_H
 
@@ -9,14 +15,14 @@ namespace myWebServ
 {
 
 /**
- *  ¶ÔepollµÄ·â×°
+ *  å¯¹epollçš„å°è£…
  */
 class epoller
 {
 public:
     enum EPOLL_OP {ADD = EPOLL_CTL_ADD, MOD = EPOLL_CTL_MOD, DEL = EPOLL_CTL_DEL};
     /**
-     * ×î´óµÄÁ¬½ÓÊıºÍ×î´óµÄ»Ø´«ÊÂ¼şÊı
+     * æœ€å¤§çš„è¿æ¥æ•°å’Œæœ€å¤§çš„å›ä¼ äº‹ä»¶æ•°
      */
     epoller(int _max = 4096, int maxevents = 2048);
     ~epoller();
