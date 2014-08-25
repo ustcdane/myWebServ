@@ -344,7 +344,7 @@ bool httpConn::write()
 
     while( 1 )// ET 模式下的操作
     {
-        temp = writev( sock_fd, iv_, iv__count );
+        temp = writev( sock_fd, iv_, iv_count );
         if ( temp <= -1 )
         {
             if( errno == EAGAIN )// 若TCP缓冲区没有空闲空间,则等到下一轮EPOLLOUT事件
@@ -481,7 +481,7 @@ bool httpConn::process_write( HTTP_CODE ret )
                 iv_[ 0 ].iov_len = write_index;
                 iv_[ 1 ].iov_base = file_address;
                 iv_[ 1 ].iov_len = file_stat.st_size;
-                iv__count = 2;
+                iv_count = 2;
                 return true;
             }
             else
@@ -502,7 +502,7 @@ bool httpConn::process_write( HTTP_CODE ret )
 
     iv_[ 0 ].iov_base = write_buf;
     iv_[ 0 ].iov_len = write_index;
-    iv__count = 1;
+    iv_count = 1;
     return true;
 }
 // 线程池中的工作线程调用,处理HTTP请求的入口函数

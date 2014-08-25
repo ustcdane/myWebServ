@@ -104,7 +104,7 @@ private:
     char* file_address;// 客户请求mmap到内存中的起始位置
     struct stat file_stat;// 目标文件的状态
     struct iovec iv_[2];// 采用 writev来执行写操作，所需的变量
-    int iv__count;
+    int iv_count;
 };
 
 }
