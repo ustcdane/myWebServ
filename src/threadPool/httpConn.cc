@@ -26,24 +26,24 @@ int httpConn::epoll_fd = -1;
 
 void httpConn::close_conn( bool real_close )
 {
-    if( real_close && ( m_sockfd != -1 ) )
+    if( real_close && ( sock_fd != -1 ) )
     {
-        //modfd( epoll_fd, m_sockfd, EPOLLIN );
-        removefd( epoll_fd, m_sockfd );
-        m_sockfd = -1;
+        //modfd( epoll_fd, sock_fd, EPOLLIN );
+        removefd( epoll_fd, sock_fd );
+        sock_fd = -1;
     }
 }
 
 void httpConn::init( int sockfd, const sockaddr_in& addr )
 {
-    m_sockfd = sockfd;
+    sock_fd = sockfd;
     m_address = addr;
     int error = 0;
     socklen_t len = sizeof( error );
-    getsockopt( m_sockfd, SOL_SOCKET, SO_ERROR, &error, &len );
+    getsockopt( sock_fd, SOL_SOCKET, SO_ERROR, &error, &len );
     int reuse = 1;
     // 关闭TIME_WAIT状态
-    setsockopt( m_sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof( reuse ) );
+    setsockopt( sock_fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof( reuse ) );
     addfd( epoll_fd, sockfd, true );
 
     init();
@@ -114,7 +114,7 @@ bool httpConn::read()
     int bytes_read = 0;
     while( true )// 循环读
     {
-        bytes_read = recv( m_sockfd, read_buf + read_index, READ_BUFFER_SIZE - read_index, 0 );
+        bytes_read = recv( sock_fd, read_buf + read_index, READ_BUFFER_SIZE - read_index, 0 );
         if ( bytes_read == -1 )
         {
             if( errno == EAGAIN || errno == EWOULDBLOCK )// 无数据
@@ -337,19 +337,19 @@ bool httpConn::write()
     int bytes_to_send = write_index;// 写缓冲区待发送的字节数
     if ( bytes_to_send == 0 )
     {
-        modfd( epoll_fd, m_sockfd, EPOLLIN );// set read event
+        modfd( epoll_fd, sock_fd, EPOLLIN );// set read event
         init();
         return true;
     }
 
     while( 1 )// ET 模式下的操作
     {
-        temp = writev( m_sockfd, iv_, iv__count );
+        temp = writev( sock_fd, iv_, iv__count );
         if ( temp <= -1 )
         {
             if( errno == EAGAIN )// 若TCP缓冲区没有空闲空间,则等到下一轮EPOLLOUT事件
             {
-                modfd( epoll_fd, m_sockfd, EPOLLOUT );
+                modfd( epoll_fd, sock_fd, EPOLLOUT );
                 return true;
             }
             unmap();
@@ -365,12 +365,12 @@ bool httpConn::write()
             if( linger_ )
             {
                 init();
-                modfd( epoll_fd, m_sockfd, EPOLLIN );
+                modfd( epoll_fd, sock_fd, EPOLLIN );
                 return true;
             }
             else
             {
-                modfd( epoll_fd, m_sockfd, EPOLLIN );
+                modfd( epoll_fd, sock_fd, EPOLLIN );
                 return false;
             } 
         }
@@ -511,7 +511,7 @@ void httpConn::process()
     HTTP_CODE read_ret = process_read();
     if ( read_ret == NO_REQUEST )
     {
-        modfd( epoll_fd, m_sockfd, EPOLLIN );
+        modfd( epoll_fd, sock_fd, EPOLLIN );
         return;
     }
 
@@ -521,7 +521,7 @@ void httpConn::process()
         close_conn();
     }
 
-    modfd( epoll_fd, m_sockfd, EPOLLOUT );// add write event
+    modfd( epoll_fd, sock_fd, EPOLLOUT );// add write event
 }
 
 }// namespace

@@ -81,7 +81,7 @@ public:
     static int epoll_fd;// 所有socket事件注册到这个epoll内核事件中
 
 private:
-    int m_sockfd;// 该HTTP连接的socket 
+    int sock_fd;// 该HTTP连接的socket 
     sockaddr_in m_address;// 该HTTP连接的socket地址
 
     char read_buf[ READ_BUFFER_SIZE ];// 度缓冲区
