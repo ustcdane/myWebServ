@@ -25,39 +25,39 @@ const char* doc_root = "/home/ubuntu/myWebServ/src/eventLoop";
 
 void httpConn::init()
 {
-    m_check_state = CHECK_STATE_REQUESTLINE;
-    m_linger = false;
+    check_state = CHECK_STATE_REQUESTLINE;
+    linger_ = false;
 
-    m_method = GET;
-    m_url = 0;
-    m_version = 0;
-    m_content_length = 0;
-    m_host = 0;
-    m_start_line = 0;
-    m_checked_idx = 0;
-    m_read_idx = 0;
-    m_write_idx = 0;
-    memset( m_read_buf, '\0', READ_BUFFER_SIZE );
-    memset( m_write_buf, '\0', WRITE_BUFFER_SIZE );
-    memset( m_real_file, '\0', FILENAME_LEN );
+    method_ = GET;
+    url_ = 0;
+    version_ = 0;
+    content_length = 0;
+    host_ = 0;
+    start_line = 0;
+    checked_index = 0;
+    read_index = 0;
+    write_index = 0;
+    memset( read_buf, '\0', READ_BUFFER_SIZE );
+    memset( write_buf, '\0', WRITE_BUFFER_SIZE );
+    memset( real_file, '\0', FILENAME_LEN );
 }
 // 从状态机
 httpConn::LINE_STATUS httpConn::parse_line()
 {
     char temp;
-    for ( ; m_checked_idx < m_read_idx; ++m_checked_idx )
+    for ( ; checked_index < read_index; ++checked_index )
     {
-        temp = m_read_buf[ m_checked_idx ];
+        temp = read_buf[ checked_index ];
         if ( temp == '\r' )
         {
-            if ( ( m_checked_idx + 1 ) == m_read_idx )
+            if ( ( checked_index + 1 ) == read_index )
             {
                 return LINE_OPEN;
             }
-            else if ( m_read_buf[ m_checked_idx + 1 ] == '\n' )
+            else if ( read_buf[ checked_index + 1 ] == '\n' )
             {
-                m_read_buf[ m_checked_idx++ ] = '\0';
-                m_read_buf[ m_checked_idx++ ] = '\0';
+                read_buf[ checked_index++ ] = '\0';
+                read_buf[ checked_index++ ] = '\0';
                 return LINE_OK;
             }
 
@@ -65,10 +65,10 @@ httpConn::LINE_STATUS httpConn::parse_line()
         }
         else if( temp == '\n' )
         {
-            if( ( m_checked_idx > 1 ) && ( m_read_buf[ m_checked_idx - 1 ] == '\r' ) )
+            if( ( checked_index > 1 ) && ( read_buf[ checked_index - 1 ] == '\r' ) )
             {
-                m_read_buf[ m_checked_idx-1 ] = '\0';
-                m_read_buf[ m_checked_idx++ ] = '\0';
+                read_buf[ checked_index-1 ] = '\0';
+                read_buf[ checked_index++ ] = '\0';
                 return LINE_OK;
             }
             return LINE_BAD;
@@ -80,7 +80,7 @@ httpConn::LINE_STATUS httpConn::parse_line()
 // 循环读取客户数据，直到无数据或对方关闭连接
 bool httpConn::read()
 {
-    if( m_read_idx >= READ_BUFFER_SIZE )
+    if( read_index >= READ_BUFFER_SIZE )
     {
         return false;
     }
@@ -88,7 +88,7 @@ bool httpConn::read()
     int bytes_read = 0;
     while( true )// 循环读
     {
-        bytes_read = recv( m_sockfd, m_read_buf + m_read_idx, READ_BUFFER_SIZE - m_read_idx, 0 );
+        bytes_read = recv( sock_fd, read_buf + read_index, READ_BUFFER_SIZE - read_index, 0 );
         if ( bytes_read == -1 )
         {
             if( errno == EAGAIN || errno == EWOULDBLOCK )// 无数据
@@ -102,55 +102,55 @@ bool httpConn::read()
             return false;
         }
 
-        m_read_idx += bytes_read;
+        read_index += bytes_read;
     }
     return true;
 }
 // 解析客户请求行，获得请求方法、url、HTTP协议版本
 httpConn::HTTP_CODE httpConn::parse_request_line( char* text )
 {
-    m_url = strpbrk( text, " \t" );// 遇到' '或'\t'返回
-    if ( ! m_url )// 无' '或'\t' 则出错
+    url_ = strpbrk( text, " \t" );// 遇到' '或'\t'返回
+    if ( ! url_ )// 无' '或'\t' 则出错
     {
         return BAD_REQUEST;
     }
-    *m_url++ = '\0';
+    *url_++ = '\0';
 
     char* method = text;// 得到请求方法 字符串
     if ( strcasecmp( method, "GET" ) == 0 )// 只处理 GET方法
     {
-        m_method = GET;
+        method_ = GET;
     }
     else
     {
         return BAD_REQUEST;
     }
 
-    m_url += strspn( m_url, " \t" );// 跳过所有' '或'\t'
-    m_version = strpbrk( m_url, " \t" );
-    if ( ! m_version )
+    url_ += strspn( url_, " \t" );// 跳过所有' '或'\t'
+    version_ = strpbrk( url_, " \t" );
+    if ( ! version_ )
     {
         return BAD_REQUEST;
     }
-    *m_version++ = '\0';
-    m_version += strspn( m_version, " \t" );// 得到协议版本
-    if ( strcasecmp( m_version, "HTTP/1.1" ) != 0 )
+    *version_++ = '\0';
+    version_ += strspn( version_, " \t" );// 得到协议版本
+    if ( strcasecmp( version_, "HTTP/1.1" ) != 0 )
     {
         return BAD_REQUEST;
     }
     // 检测URL是否合法
-    if ( strncasecmp( m_url, "http://", 7 ) == 0 )
+    if ( strncasecmp( url_, "http://", 7 ) == 0 )
     {
-        m_url += 7;
-        m_url = strchr( m_url, '/' );//得到文件路径
+        url_ += 7;
+        url_ = strchr( url_, '/' );//得到文件路径
     }
 
-    if ( ! m_url || m_url[ 0 ] != '/' )
+    if ( ! url_ || url_[ 0 ] != '/' )
     {
         return BAD_REQUEST;
     }
 
-    m_check_state = CHECK_STATE_HEADER;// 状态转移到头部字段解析
+    check_state = CHECK_STATE_HEADER;// 状态转移到头部字段解析
     return NO_REQUEST;
 }
 // 解析HTTP请求头部字段
@@ -158,14 +158,14 @@ httpConn::HTTP_CODE httpConn::parse_headers( char* text )
 {
     if( text[ 0 ] == '\0' )// 遇到空行
     {
-        if ( m_method == HEAD )
+        if ( method_ == HEAD )
         {
             return GET_REQUEST;
         }
 
-        if ( m_content_length != 0 )
+        if ( content_length != 0 )
         {
-            m_check_state = CHECK_STATE_CONTENT;
+            check_state = CHECK_STATE_CONTENT;
             return NO_REQUEST;
         }
 
@@ -177,20 +177,20 @@ httpConn::HTTP_CODE httpConn::parse_headers( char* text )
         text += strspn( text, " \t" );
         if ( strcasecmp( text, "keep-alive" ) == 0 )
         {
-            m_linger = true;
+            linger_ = true;
         }
     }
     else if ( strncasecmp( text, "Content-Length:", 15 ) == 0 )
     {
         text += 15;
         text += strspn( text, " \t" );
-        m_content_length = atol( text );
+        content_length = atol( text );
     }
     else if ( strncasecmp( text, "Host:", 5 ) == 0 )
     {
         text += 5;
         text += strspn( text, " \t" );
-        m_host = text;
+        host_ = text;
     }
     else
     {
@@ -203,9 +203,9 @@ httpConn::HTTP_CODE httpConn::parse_headers( char* text )
 // 判断HTTP请求的消息体是否被完整的读入，无深入解析
 httpConn::HTTP_CODE httpConn::parse_content( char* text )
 {
-    if ( m_read_idx >= ( m_content_length + m_checked_idx ) )
+    if ( read_index >= ( content_length + checked_index ) )
     {
-        text[ m_content_length ] = '\0';
+        text[ content_length ] = '\0';
         return GET_REQUEST;
     }
 
@@ -218,14 +218,14 @@ httpConn::HTTP_CODE httpConn::process_read()
     HTTP_CODE ret = NO_REQUEST;
     char* text = 0;
    // 主状态机，从buffer中读取所有完整的行
-    while ( ( ( m_check_state == CHECK_STATE_CONTENT ) && ( line_status == LINE_OK  ) )
+    while ( ( ( check_state == CHECK_STATE_CONTENT ) && ( line_status == LINE_OK  ) )
                 || ( ( line_status = parse_line() ) == LINE_OK ) )
     {
         text = get_line();
-        m_start_line = m_checked_idx;// 下一行的起始位置
-        printf( "get 1 http line: %s\n", text);
+        start_line = checked_index;// 下一行的起始位置
+        printf( "got 1 http line: %s\n", text );
 
-        switch ( m_check_state )
+        switch ( check_state )
         {
             case CHECK_STATE_REQUESTLINE:// 状态1，分析请求行
             {
@@ -268,39 +268,39 @@ httpConn::HTTP_CODE httpConn::process_read()
 
     return NO_REQUEST;
 }
-// 得到正确的HTTP请求后，分析目标文件的属性,若文件存在则使用mmap将其内存映射到m_file_address
+// 得到正确的HTTP请求后，分析目标文件的属性,若文件存在则使用mmap将其内存映射到file_address
 httpConn::HTTP_CODE httpConn::do_request()
 {
-    strcpy( m_real_file, doc_root );
+    strcpy( real_file, doc_root );
     int len = strlen( doc_root );
-    strncpy( m_real_file + len, m_url, FILENAME_LEN - len - 1 );
-    if ( stat( m_real_file, &m_file_stat ) < 0 )
+    strncpy( real_file + len, url_, FILENAME_LEN - len - 1 );
+    if ( stat( real_file, &file_stat ) < 0 )
     {
         return NO_RESOURCE;
     }
 
-    if ( ! ( m_file_stat.st_mode & S_IROTH ) )
+    if ( ! ( file_stat.st_mode & S_IROTH ) )
     {
         return FORBIDDEN_REQUEST;
     }
 
-    if ( S_ISDIR( m_file_stat.st_mode ) )
+    if ( S_ISDIR( file_stat.st_mode ) )
     {
         return BAD_REQUEST;
     }
 
-    int fd = open( m_real_file, O_RDONLY );
-    m_file_address = ( char* )mmap( 0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0 );
+    int fd = open( real_file, O_RDONLY );
+    file_address = ( char* )mmap( 0, file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0 );
     close( fd );
     return FILE_REQUEST;
 }
 // 对内存映射区执行munmao操作
 void httpConn::unmap()
 {
-    if( m_file_address )
+    if( file_address )
     {
-        munmap( m_file_address, m_file_stat.st_size );
-        m_file_address = 0;
+        munmap( file_address, file_stat.st_size );
+        file_address = 0;
     }
 }
 // 写HTTP响应
@@ -308,22 +308,22 @@ bool httpConn::write()
 {
     int temp = 0;
     int bytes_have_send = 0;
-    int bytes_to_send = m_write_idx;// 写缓冲区待发送的字节数
+    int bytes_to_send = write_index;// 写缓冲区待发送的字节数
     if ( bytes_to_send == 0 )
     {
-        pEpoll->mod(m_sockfd, EPOLLIN );// set read event
+        pEpoll->mod(sock_fd, EPOLLIN );// set read event
         init();
         return true;
     }
 
     while( 1 )// ET 模式下的操作
     {
-        temp = writev( m_sockfd, m_iv, m_iv_count );
+        temp = writev( sock_fd, iv_, iv_count );
         if ( temp <= -1 )
         {
             if( errno == EAGAIN )// 若TCP缓冲区没有空闲空间,则等到下一轮EPOLLOUT事件
             {
-                pEpoll->mod( m_sockfd, EPOLLOUT );
+                pEpoll->mod( sock_fd, EPOLLOUT );
                 return true;
             }
             unmap();
@@ -336,15 +336,15 @@ bool httpConn::write()
         if ( bytes_to_send <= bytes_have_send )
         {
             unmap();
-            if( m_linger )
+            if( linger_ )
             {
                 init();
-                pEpoll->mod(m_sockfd, EPOLLIN );
+                pEpoll->mod(sock_fd, EPOLLIN );
                 return true;
             }
             else
             {
-                pEpoll->mod(m_sockfd, EPOLLIN );
+                pEpoll->mod(sock_fd, EPOLLIN );
                 return false;
             }
         }
@@ -353,18 +353,18 @@ bool httpConn::write()
 // 往写缓冲区写待发送数据
 bool httpConn::add_response( const char* format, ... )
 {
-    if( m_write_idx >= WRITE_BUFFER_SIZE )
+    if( write_index >= WRITE_BUFFER_SIZE )
     {
         return false;
     }
     va_list arg_list;
     va_start( arg_list, format );
-    int len = vsnprintf( m_write_buf + m_write_idx, WRITE_BUFFER_SIZE - 1 - m_write_idx, format, arg_list );
-    if( len >= ( WRITE_BUFFER_SIZE - 1 - m_write_idx ) )
+    int len = vsnprintf( write_buf + write_index, WRITE_BUFFER_SIZE - 1 - write_index, format, arg_list );
+    if( len >= ( WRITE_BUFFER_SIZE - 1 - write_index ) )
     {
         return false;
     }
-    m_write_idx += len;
+    write_index += len;
     va_end( arg_list );
     return true;
 }
@@ -388,7 +388,7 @@ bool httpConn::add_content_length( int content_len )
 
 bool httpConn::add_linger()
 {
-    return add_response( "Connection: %s\r\n", ( m_linger == true ) ? "keep-alive" : "close" );
+    return add_response( "Connection: %s\r\n", ( linger_ == true ) ? "keep-alive" : "close" );
 }
 
 bool httpConn::add_blank_line()
@@ -448,14 +448,14 @@ bool httpConn::process_write( HTTP_CODE ret )
         case FILE_REQUEST:
         {
             add_status_line( 200, ok_200_title );
-            if ( m_file_stat.st_size != 0 )
+            if ( file_stat.st_size != 0 )
             {
-                add_headers( m_file_stat.st_size );
-                m_iv[ 0 ].iov_base = m_write_buf;
-                m_iv[ 0 ].iov_len = m_write_idx;
-                m_iv[ 1 ].iov_base = m_file_address;
-                m_iv[ 1 ].iov_len = m_file_stat.st_size;
-                m_iv_count = 2;
+                add_headers( file_stat.st_size );
+                iv_[ 0 ].iov_base = write_buf;
+                iv_[ 0 ].iov_len = write_index;
+                iv_[ 1 ].iov_base = file_address;
+                iv_[ 1 ].iov_len = file_stat.st_size;
+                iv_count = 2;
                 return true;
             }
             else
@@ -474,9 +474,9 @@ bool httpConn::process_write( HTTP_CODE ret )
         }
     }
 
-    m_iv[ 0 ].iov_base = m_write_buf;
-    m_iv[ 0 ].iov_len = m_write_idx;
-    m_iv_count = 1;
+    iv_[ 0 ].iov_base = write_buf;
+    iv_[ 0 ].iov_len = write_index;
+    iv_count = 1;
     return true;
 }
 // 线程池中的工作线程调用,处理HTTP请求的入口函数
@@ -485,17 +485,17 @@ void httpConn::process()
     HTTP_CODE read_ret = process_read();
     if ( read_ret == NO_REQUEST )
     {
-        pEpoll->mod(m_sockfd, EPOLLIN );
+        pEpoll->mod(sock_fd, EPOLLIN );
         return;
     }
 
     bool write_ret = process_write(read_ret);
     if ( ! write_ret )
     {
-        pLoop->close_con(m_sockfd);
+        pLoop->close_con(sock_fd);
     }
 
-    pEpoll->mod(m_sockfd, EPOLLOUT );// add write event
+    pEpoll->mod(sock_fd, EPOLLOUT );// add write event
 }
 
 }// namespace
