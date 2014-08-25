@@ -300,23 +300,23 @@ httpConn::HTTP_CODE httpConn::do_request()
     strcpy( real_file, doc_root );
     int len = strlen( doc_root );
     strncpy( real_file + len, url_, FILENAME_LEN - len - 1 );
-    if ( stat( real_file, &m_file_stat ) < 0 )
+    if ( stat( real_file, &file_stat ) < 0 )
     {
         return NO_RESOURCE;
     }
 
-    if ( ! ( m_file_stat.st_mode & S_IROTH ) )
+    if ( ! ( file_stat.st_mode & S_IROTH ) )
     {
         return FORBIDDEN_REQUEST;
     }
 
-    if ( S_ISDIR( m_file_stat.st_mode ) )
+    if ( S_ISDIR( file_stat.st_mode ) )
     {
         return BAD_REQUEST;
     }
 
     int fd = open( real_file, O_RDONLY );
-    file_address = ( char* )mmap( 0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0 );
+    file_address = ( char* )mmap( 0, file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0 );
     close( fd );
     return FILE_REQUEST;
 }
@@ -325,7 +325,7 @@ void httpConn::unmap()
 {
     if( file_address )
     {
-        munmap( file_address, m_file_stat.st_size );
+        munmap( file_address, file_stat.st_size );
         file_address = 0;
     }
 }
@@ -474,13 +474,13 @@ bool httpConn::process_write( HTTP_CODE ret )
         case FILE_REQUEST:
         {
             add_status_line( 200, ok_200_title );
-            if ( m_file_stat.st_size != 0 )
+            if ( file_stat.st_size != 0 )
             {
-                add_headers( m_file_stat.st_size );
+                add_headers( file_stat.st_size );
                 iv_[ 0 ].iov_base = write_buf;
                 iv_[ 0 ].iov_len = write_index;
                 iv_[ 1 ].iov_base = file_address;
-                iv_[ 1 ].iov_len = m_file_stat.st_size;
+                iv_[ 1 ].iov_len = file_stat.st_size;
                 iv__count = 2;
                 return true;
             }
