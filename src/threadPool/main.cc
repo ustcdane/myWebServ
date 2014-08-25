@@ -94,7 +94,7 @@ int main( int argc, char* argv[] )
     int epollfd = epoll_create( 5 );
     assert( epollfd != -1 );
     addfd( epollfd, listenfd, false );
-    httpConn::m_epollfd = epollfd;
+    httpConn::epoll_fd = epollfd;
 
     while( true )
     {
@@ -116,11 +116,6 @@ int main( int argc, char* argv[] )
                 if ( connfd < 0 )
                 {
                     printf( "errno is: %d\n", errno );
-                    continue;
-                }
-                if( httpConn::m_user_count >= MAX_FD )
-                {
-                    show_error( connfd, "Internal server busy" );
                     continue;
                 }
                 
