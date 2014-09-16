@@ -54,7 +54,7 @@ public:
             }
 			delete pEpoll;
         }
-		thread_.join();
+	thread_.join();
     }
 
     void push_new_con(int fd)
@@ -63,10 +63,10 @@ public:
         fd_con_queue.push(fd);
     }
 
-	int get_event_fd() const
-	{
-		return event_fd;
-	}
+    int get_event_fd() const
+    {
+	return event_fd;
+    }
 
     bool isValid() const
     {
